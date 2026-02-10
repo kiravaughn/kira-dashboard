@@ -26,6 +26,7 @@ model ContentReview {
   filePath   String    @unique
   category   String    @default("general")
   status     String    @default("pending")
+  blog       Boolean   @default(false)
   notes      String?
   reviewedAt DateTime?
   createdAt  DateTime  @default(now())

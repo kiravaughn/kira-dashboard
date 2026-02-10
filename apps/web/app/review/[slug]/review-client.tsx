@@ -17,6 +17,7 @@ interface ReviewClientProps {
 interface ReviewData {
   status: string;
   notes: string;
+  blog: boolean;
   reviewedAt: string | null;
 }
 
@@ -24,12 +25,14 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
   const [reviewData, setReviewData] = useState<ReviewData>({
     status: "pending",
     notes: "",
+    blog: false,
     reviewedAt: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [localNotes, setLocalNotes] = useState("");
   const [localStatus, setLocalStatus] = useState("pending");
+  const [localBlog, setLocalBlog] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Fetch review data from API
@@ -42,10 +45,12 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           setReviewData({
             status: data.status || "pending",
             notes: data.notes || "",
+            blog: data.blog ?? false,
             reviewedAt: data.reviewedAt,
           });
           setLocalStatus(data.status || "pending");
           setLocalNotes(data.notes || "");
+          setLocalBlog(data.blog ?? false);
         }
       } catch (error) {
         console.error("Error fetching review:", error);
@@ -71,6 +76,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           status: localStatus,
           notes: localNotes,
           category,
+          blog: localBlog,
         }),
       });
 
@@ -79,6 +85,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
         setReviewData({
           status: data.status,
           notes: data.notes || "",
+          blog: data.blog ?? false,
           reviewedAt: data.reviewedAt,
         });
         setSaveMessage({ type: "success", text: "Review saved successfully!" });
@@ -176,6 +183,23 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
                   Needs Work
                 </Button>
               </div>
+            </div>
+
+            {/* Blog Toggle */}
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <label htmlFor="blog-toggle" className="text-sm font-medium cursor-pointer">
+                Publish to Blog
+              </label>
+              <button
+                id="blog-toggle"
+                type="button"
+                role="switch"
+                aria-checked={localBlog}
+                onClick={() => setLocalBlog(!localBlog)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${localBlog ? "bg-green-600" : "bg-zinc-700"}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${localBlog ? "translate-x-5" : "translate-x-0"}`} />
+              </button>
             </div>
 
             {/* Notes */}

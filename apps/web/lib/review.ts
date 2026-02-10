@@ -14,7 +14,7 @@ export interface ContentReview {
 export async function getApprovedPosts(): Promise<Set<string>> {
   try {
     const reviews = await prisma.contentReview.findMany({
-      where: { status: "approved" },
+      where: { status: "approved", blog: true },
       select: { filePath: true },
     });
 
