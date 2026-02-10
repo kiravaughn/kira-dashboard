@@ -140,11 +140,11 @@ export function TodoList({ initialTodos }: { initialTodos: Todo[] }) {
               onChange={() => toggleComplete(todo.id, !todo.completed)}
               className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer flex-shrink-0"
             />
-            <div 
-              className="flex-1 min-w-0 cursor-pointer" 
-              onClick={() => hasBody && toggleExpand(todo.id)}
-            >
-              <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <div 
+                className={`flex items-start gap-2 ${hasBody ? "cursor-pointer" : ""}`}
+                onClick={() => hasBody && toggleExpand(todo.id)}
+              >
                 <p className={`font-medium flex-1 ${todo.completed ? "line-through" : ""}`}>
                   {todo.title}
                 </p>
