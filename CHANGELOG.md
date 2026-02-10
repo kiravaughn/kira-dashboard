@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Todo system overhaul: recurring, scheduled, and persistent todo types
+- Expandable markdown body for todo details
+- Daily/weekly auto-reset for recurring habits
 - Category/subcategory system for content review (replaces flat categories + blog boolean)
 - Review page with collapsible category sections, status filters, card/list views
 - Blog toggle replaced with proper category-based blog publishing
