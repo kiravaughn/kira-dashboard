@@ -138,6 +138,7 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
   const [sortAsc, setSortAsc] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [sectionStatusFilter, setSectionStatusFilter] = useState<Record<string, string>>({});
+  const [sectionSubcategoryFilter, setSectionSubcategoryFilter] = useState<Record<string, string>>({});
 
   // Restore preferences and section states on mount
   useEffect(() => {
@@ -203,12 +204,30 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
     setSectionStatusFilter((prev) => ({ ...prev, [key]: value }));
   };
 
+  const getSectionSubcategoryFilter = (key: string) => sectionSubcategoryFilter[key] ?? "all";
+  const setSectionSubcategory = (key: string, value: string) => {
+    setSectionSubcategoryFilter((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Get unique subcategories for a section
+  const getSectionSubcategories = (sectionKey: string): string[] => {
+    const items = grouped[sectionKey] ?? [];
+    const uniqueSubcategories = new Set(items.map((f) => f.subcategory));
+    return Array.from(uniqueSubcategories).sort();
+  };
+
   const visibleSections = SECTIONS.filter((s) => (grouped[s.key] ?? []).length > 0);
 
   const totalShown = visibleSections.reduce((acc, s) => {
     const statusF = getSectionStatusFilter(s.key);
+    const subcategoryF = getSectionSubcategoryFilter(s.key);
     const items = grouped[s.key] ?? [];
-    return acc + (statusF === "all" ? items.length : items.filter((f) => f.status === statusF).length);
+    const filtered = items.filter((f) => {
+      const statusMatch = statusF === "all" || f.status === statusF;
+      const subcategoryMatch = subcategoryF === "all" || f.subcategory === subcategoryF;
+      return statusMatch && subcategoryMatch;
+    });
+    return acc + filtered.length;
   }, 0);
 
   return (
@@ -257,8 +276,15 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
       {visibleSections.map((section) => {
         const allItems = grouped[section.key] ?? [];
         const statusF = getSectionStatusFilter(section.key);
-        const items = statusF === "all" ? allItems : allItems.filter((f) => f.status === statusF);
+        const subcategoryF = getSectionSubcategoryFilter(section.key);
+        const items = allItems.filter((f) => {
+          const statusMatch = statusF === "all" || f.status === statusF;
+          const subcategoryMatch = subcategoryF === "all" || f.subcategory === subcategoryF;
+          return statusMatch && subcategoryMatch;
+        });
         const isCollapsed = collapsed[section.key] ?? false;
+        const sectionSubcategories = getSectionSubcategories(section.key);
+        const showSubcategoryFilter = sectionSubcategories.length > 1;
 
         return (
           <div key={section.key}>
@@ -288,6 +314,23 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
                   <SelectItem value="needs-improvement">Needs Improvement</SelectItem>
                 </SelectContent>
               </Select>
+
+              {showSubcategoryFilter && (
+                <Select value={subcategoryF} onValueChange={(v) => setSectionSubcategory(section.key, v)}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <span className="text-muted-foreground mr-1">Subcategory:</span>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {sectionSubcategories.map((subcat) => (
+                      <SelectItem key={subcat} value={subcat}>
+                        {SUBCATEGORY_LABELS[subcat] || subcat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {!isCollapsed && items.length === 0 && (
