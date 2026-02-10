@@ -12,13 +12,13 @@ import { ReviewFilters } from "@/components/review-filters";
 const CONTENT_DIR = process.env.CONTENT_DIR || "/home/kira/.openclaw/workspace/content/drafts";
 
 type Status = "pending" | "approved" | "rejected" | "needs-improvement";
-type Category = "blog-tech" | "blog-tcg" | "blog-posts" | "job-search" | "linkedin" | "style-guide" | "general";
 
 interface FileData {
   slug: string;
   title: string;
   preview: string;
-  category: Category;
+  category: string;
+  subcategory: string;
   status: Status;
   filePath: string;
   createdAt: string | null;
@@ -62,23 +62,40 @@ async function getContentFiles(): Promise<FileData[]> {
       // Get review metadata from database
       const review = reviewMap.get(filePath);
       
-      // Determine category (DB takes priority, then frontmatter, then filename heuristics)
-      let category: Category = "general";
+      // Determine category and subcategory (DB takes priority, then frontmatter, then filename heuristics)
+      let category = "general";
+      let subcategory = "general";
+      
       if (review?.category) {
-        category = review.category as Category;
+        category = review.category;
+        subcategory = review.subcategory || "general";
       } else if (data.category) {
-        category = data.category as Category;
+        category = data.category;
+        subcategory = data.subcategory || "general";
       } else {
         // Fallback to filename heuristics
         const tcgKeywords = ["riftbound", "pokemon", "magic", "onepiece", "tcg", "deck", "mtg", "yugioh", "lorcana"];
         const techKeywords = ["nextjs", "react", "typescript", "prisma", "stripe", "api", "docker", "node", "deploy", "ci-cd", "ai-", "server-components"];
         const lowerFile = file.toLowerCase();
-        if (tcgKeywords.some(k => lowerFile.includes(k))) category = "blog-tcg";
-        else if (techKeywords.some(k => lowerFile.includes(k))) category = "blog-tech";
-        else if (file.includes("blog") || file.includes("post")) category = "blog-tech";
-        else if (file.includes("job") || file.includes("resume")) category = "job-search";
-        else if (file.includes("linkedin")) category = "linkedin";
-        else if (file.includes("style")) category = "style-guide";
+        if (tcgKeywords.some(k => lowerFile.includes(k))) {
+          category = "blog";
+          subcategory = "tcg";
+        } else if (techKeywords.some(k => lowerFile.includes(k))) {
+          category = "blog";
+          subcategory = "tech";
+        } else if (file.includes("blog") || file.includes("post")) {
+          category = "blog";
+          subcategory = "tech";
+        } else if (file.includes("job") || file.includes("resume")) {
+          category = "job-search";
+          subcategory = "general";
+        } else if (file.includes("linkedin")) {
+          category = "content";
+          subcategory = "linkedin";
+        } else if (file.includes("style")) {
+          category = "reference";
+          subcategory = "style-guide";
+        }
       }
 
       // Get status from DB (default to pending if not in DB)
@@ -89,6 +106,7 @@ async function getContentFiles(): Promise<FileData[]> {
         title,
         preview,
         category,
+        subcategory,
         status,
         filePath,
         createdAt: review?.createdAt?.toISOString() ?? null,

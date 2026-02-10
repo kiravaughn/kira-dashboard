@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { filePath, status, notes, category, blog } = body;
+  const { filePath, status, notes, category, subcategory } = body;
 
   if (!filePath || !status) {
     return NextResponse.json({ error: "filePath and status required" }, { status: 400 });
@@ -72,15 +72,15 @@ export async function POST(req: NextRequest) {
       filePath,
       status,
       notes: notes ?? "",
-      category: category ?? "",
-      blog: blog ?? false,
+      category: category ?? "general",
+      subcategory: subcategory ?? "general",
       reviewedAt: new Date(),
     },
     update: {
       status,
       notes: notes ?? "",
-      category: category ?? "",
-      ...(typeof blog === "boolean" ? { blog } : {}),
+      category: category ?? "general",
+      subcategory: subcategory ?? "general",
       ...(statusChanged ? { reviewedAt: new Date() } : {}),
     },
   });

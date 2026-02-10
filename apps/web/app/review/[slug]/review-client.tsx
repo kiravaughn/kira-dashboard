@@ -17,7 +17,8 @@ interface ReviewClientProps {
 interface ReviewData {
   status: string;
   notes: string;
-  blog: boolean;
+  category: string;
+  subcategory: string;
   reviewedAt: string | null;
 }
 
@@ -25,14 +26,16 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
   const [reviewData, setReviewData] = useState<ReviewData>({
     status: "pending",
     notes: "",
-    blog: false,
+    category: "general",
+    subcategory: "general",
     reviewedAt: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [localNotes, setLocalNotes] = useState("");
   const [localStatus, setLocalStatus] = useState("pending");
-  const [localBlog, setLocalBlog] = useState(false);
+  const [localCategory, setLocalCategory] = useState("general");
+  const [localSubcategory, setLocalSubcategory] = useState("general");
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Fetch review data from API
@@ -45,12 +48,14 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           setReviewData({
             status: data.status || "pending",
             notes: data.notes || "",
-            blog: data.blog ?? false,
+            category: data.category || "general",
+            subcategory: data.subcategory || "general",
             reviewedAt: data.reviewedAt,
           });
           setLocalStatus(data.status || "pending");
           setLocalNotes(data.notes || "");
-          setLocalBlog(data.blog ?? false);
+          setLocalCategory(data.category || "general");
+          setLocalSubcategory(data.subcategory || "general");
         }
       } catch (error) {
         console.error("Error fetching review:", error);
@@ -75,8 +80,8 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           filePath,
           status: localStatus,
           notes: localNotes,
-          category,
-          blog: localBlog,
+          category: localCategory,
+          subcategory: localSubcategory,
         }),
       });
 
@@ -85,7 +90,8 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
         setReviewData({
           status: data.status,
           notes: data.notes || "",
-          blog: data.blog ?? false,
+          category: data.category || "general",
+          subcategory: data.subcategory || "general",
           reviewedAt: data.reviewedAt,
         });
         setSaveMessage({ type: "success", text: "Review saved successfully!" });
@@ -185,21 +191,34 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
               </div>
             </div>
 
-            {/* Blog Toggle */}
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <label htmlFor="blog-toggle" className="text-sm font-medium cursor-pointer">
-                Publish to Blog
-              </label>
-              <button
-                id="blog-toggle"
-                type="button"
-                role="switch"
-                aria-checked={localBlog}
-                onClick={() => setLocalBlog(!localBlog)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${localBlog ? "bg-green-600" : "bg-zinc-700"}`}
-              >
-                <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${localBlog ? "translate-x-5" : "translate-x-0"}`} />
-              </button>
+            {/* Category & Subcategory */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium">
+                  Category
+                </label>
+                <input
+                  id="category"
+                  type="text"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="e.g., blog, content"
+                  value={localCategory}
+                  onChange={(e) => setLocalCategory(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="subcategory" className="text-sm font-medium">
+                  Subcategory
+                </label>
+                <input
+                  id="subcategory"
+                  type="text"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="e.g., tech, tcg"
+                  value={localSubcategory}
+                  onChange={(e) => setLocalSubcategory(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Notes */}

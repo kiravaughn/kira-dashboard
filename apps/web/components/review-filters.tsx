@@ -14,13 +14,13 @@ import {
 import Link from "next/link";
 
 type Status = "pending" | "approved" | "rejected" | "needs-improvement";
-type Category = "blog-tech" | "blog-tcg" | "blog-posts" | "job-search" | "linkedin" | "style-guide" | "general";
 
 interface FileData {
   slug: string;
   title: string;
   preview: string;
-  category: Category;
+  category: string;
+  subcategory: string;
   status: Status;
   filePath: string;
   createdAt: string | null;
@@ -45,11 +45,17 @@ const STATUS_LABELS: Record<Status, string> = {
   "needs-improvement": "Needs Improvement",
 };
 
-const CATEGORY_LABELS: Record<Category, string> = {
-  "blog-tech": "Tech Articles",
-  "blog-tcg": "TCG Articles",
-  "blog-posts": "Blog Posts",
+const CATEGORY_LABELS: Record<string, string> = {
+  "blog": "Blog",
+  "content": "Content",
   "job-search": "Job Search",
+  "reference": "Reference",
+  "general": "General",
+};
+
+const SUBCATEGORY_LABELS: Record<string, string> = {
+  "tech": "Tech",
+  "tcg": "TCG",
   "linkedin": "LinkedIn",
   "style-guide": "Style Guide",
   "general": "General",
@@ -58,21 +64,20 @@ const CATEGORY_LABELS: Record<Category, string> = {
 interface Section {
   key: string;
   label: string;
-  categories: string[];
+  category: string;
 }
 
 const SECTIONS: Section[] = [
-  { key: "blog", label: "Blog Posts & Articles", categories: ["blog-tech", "blog-tcg", "blog-posts"] },
-  { key: "linkedin", label: "Content to Post", categories: ["linkedin"] },
-  { key: "job-search", label: "Job Search", categories: ["job-search"] },
-  { key: "other", label: "Other", categories: ["style-guide", "general"] },
+  { key: "blog", label: "Blog Posts & Articles", category: "blog" },
+  { key: "content", label: "Content to Post", category: "content" },
+  { key: "job-search", label: "Job Search", category: "job-search" },
+  { key: "reference", label: "Reference", category: "reference" },
+  { key: "other", label: "Other", category: "general" },
 ];
 
 function getSection(category: string): string {
-  for (const s of SECTIONS) {
-    if (s.categories.includes(category)) return s.key;
-  }
-  return "other";
+  const section = SECTIONS.find((s) => s.category === category);
+  return section ? section.key : "other";
 }
 
 function formatDate(iso: string | null): string {
@@ -301,7 +306,8 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
                           </CardTitle>
                           <div className="flex flex-wrap items-center gap-1.5 mt-2">
                             <Badge variant="secondary" className="text-[11px]">
-                              {CATEGORY_LABELS[file.category]}
+                              {CATEGORY_LABELS[file.category] || file.category}
+                              {file.subcategory && file.subcategory !== "general" && ` / ${SUBCATEGORY_LABELS[file.subcategory] || file.subcategory}`}
                             </Badge>
                             <Badge variant={STATUS_VARIANT[file.status]} className="text-[11px]">
                               {STATUS_LABELS[file.status]}
@@ -336,7 +342,8 @@ export function ReviewFilters({ files }: ReviewFiltersProps) {
                           </td>
                           <td className="py-2 px-3">
                             <Badge variant="secondary" className="text-[11px]">
-                              {CATEGORY_LABELS[file.category]}
+                              {CATEGORY_LABELS[file.category] || file.category}
+                              {file.subcategory && file.subcategory !== "general" && ` / ${SUBCATEGORY_LABELS[file.subcategory] || file.subcategory}`}
                             </Badge>
                           </td>
                           <td className="py-2 px-3">

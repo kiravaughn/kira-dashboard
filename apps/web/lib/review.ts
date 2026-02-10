@@ -4,6 +4,7 @@ export interface ContentReview {
   id: number;
   filePath: string;
   category: string;
+  subcategory: string;
   status: string;
   notes: string | null;
   reviewedAt: Date | null;
@@ -14,7 +15,7 @@ export interface ContentReview {
 export async function getApprovedPosts(): Promise<Set<string>> {
   try {
     const reviews = await prisma.contentReview.findMany({
-      where: { status: "approved", blog: true },
+      where: { status: "approved", category: "blog" },
       select: { filePath: true },
     });
 
