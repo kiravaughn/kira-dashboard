@@ -83,3 +83,31 @@
     color: hsl(var(--foreground));
   }
 }
+
+@layer utilities {
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+  
+  /* Ensure prose content breaks long words on mobile */
+  .prose {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+  
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+  
+  .prose pre,
+  .prose code {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}

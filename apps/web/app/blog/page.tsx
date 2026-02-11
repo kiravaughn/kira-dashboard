@@ -50,7 +50,7 @@ async function getBlogPosts(): Promise<BlogPost[]> {
       }
 
       // Extract excerpt
-      let excerpt = data.excerpt || "";
+      let excerpt = data.description || data.excerpt || "";
       if (!excerpt) {
         const paragraphs = content.split(/\n\n+/);
         for (const para of paragraphs) {

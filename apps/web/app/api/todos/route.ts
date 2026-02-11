@@ -9,14 +9,16 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const todos = await prisma.todo.findMany({
-    orderBy: [{ completed: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ completed: "asc" }, { priority: "desc" }, { createdAt: "desc" }],
   });
 
   // For recurring todos, check if they need to be reset
   const today = new Date().toISOString().split('T')[0]!; // YYYY-MM-DD
-  const processedTodos = todos.map(todo => {
-    if (todo.todoType !== 'recurring' || !todo.lastCompletedDate) {
-      return todo;
+  const todosToReset: number[] = [];
+  
+  for (const todo of todos) {
+    if (todo.todoType !== 'recurring' || !todo.lastCompletedDate || !todo.completed) {
+      continue;
     }
     
     const lastCompletedDateStr = new Date(todo.lastCompletedDate).toISOString().split('T')[0]!;
@@ -39,13 +41,24 @@ export async function GET() {
     }
     
     if (shouldReset) {
-      return { ...todo, completed: false, completedAt: null };
+      todosToReset.push(todo.id);
     }
-    
-    return todo;
-  });
+  }
+  
+  // Actually reset the todos in the database
+  if (todosToReset.length > 0) {
+    await prisma.todo.updateMany({
+      where: { id: { in: todosToReset } },
+      data: { completed: false, completedAt: null },
+    });
+  }
+  
+  // Refetch todos to get updated state
+  const updatedTodos = todosToReset.length > 0 
+    ? await prisma.todo.findMany({ orderBy: [{ completed: "asc" }, { priority: "desc" }, { createdAt: "desc" }] })
+    : todos;
 
-  return NextResponse.json(processedTodos);
+  return NextResponse.json(updatedTodos);
 }
 
 export async function POST(req: NextRequest) {

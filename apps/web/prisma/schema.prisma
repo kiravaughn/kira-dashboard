@@ -22,18 +22,32 @@ model Todo {
   dueDate           DateTime? // for scheduled todos
   recurrence        String?   // for recurring: "daily", "weekday", "weekly"
   lastCompletedDate DateTime? @db.Date // for recurring todos - tracks last completion date
+  priority          Int       @default(0) // for drag-and-drop ordering (higher = higher priority)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
 
 model ContentReview {
-  id          Int       @id @default(autoincrement())
-  filePath    String    @unique
-  category    String    @default("general")
-  subcategory String    @default("general")
-  status      String    @default("pending")
+  id          Int                @id @default(autoincrement())
+  filePath    String             @unique
+  category    String             @default("general")
+  subcategory String             @default("general")
+  status      String             @default("pending")
   notes       String?
   reviewedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  auditLogs   ContentAuditLog[]
+}
+
+model ContentAuditLog {
+  id         Int           @id @default(autoincrement())
+  contentId  Int
+  content    ContentReview @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  action     String        // "status_change", "notes_updated", "published", "revised"
+  actor      String        // "graham" or "kira"
+  fromStatus String?
+  toStatus   String?
+  notes      String?
+  createdAt  DateTime      @default(now())
 }

@@ -15,11 +15,22 @@ interface ReviewClientProps {
 }
 
 interface ReviewData {
+  id?: number;
   status: string;
   notes: string;
   category: string;
   subcategory: string;
   reviewedAt: string | null;
+}
+
+interface AuditLog {
+  id: number;
+  action: string;
+  actor: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  notes: string | null;
+  createdAt: string;
 }
 
 export default function ReviewClient({ slug, filePath, content, category }: ReviewClientProps) {
@@ -37,6 +48,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
   const [localCategory, setLocalCategory] = useState("general");
   const [localSubcategory, setLocalSubcategory] = useState("general");
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Fetch review data from API
   useEffect(() => {
@@ -46,6 +58,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
         if (res.ok) {
           const data = await res.json();
           setReviewData({
+            id: data.id,
             status: data.status || "pending",
             notes: data.notes || "",
             category: data.category || "general",
@@ -56,6 +69,15 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           setLocalNotes(data.notes || "");
           setLocalCategory(data.category || "general");
           setLocalSubcategory(data.subcategory || "general");
+          
+          // Fetch audit logs if we have a review ID
+          if (data.id) {
+            const auditRes = await fetch(`/api/review?audit=true&contentId=${data.id}`);
+            if (auditRes.ok) {
+              const logs = await auditRes.json();
+              setAuditLogs(logs);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching review:", error);
@@ -88,6 +110,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
       if (res.ok) {
         const data = await res.json();
         setReviewData({
+          id: data.id,
           status: data.status,
           notes: data.notes || "",
           category: data.category || "general",
@@ -95,6 +118,15 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
           reviewedAt: data.reviewedAt,
         });
         setSaveMessage({ type: "success", text: "Review saved successfully!" });
+        
+        // Refetch audit logs
+        if (data.id) {
+          const auditRes = await fetch(`/api/review?audit=true&contentId=${data.id}`);
+          if (auditRes.ok) {
+            const logs = await auditRes.json();
+            setAuditLogs(logs);
+          }
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         setSaveMessage({ type: "error", text: err.error || "Failed to save review" });
@@ -121,16 +153,47 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
     }
   };
 
+  const formatRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays === 1) return "yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return then.toLocaleDateString();
+  };
+
+  const getActionDescription = (log: AuditLog) => {
+    switch (log.action) {
+      case "status_change":
+        return `Changed status from ${log.fromStatus || "none"} to ${log.toStatus}`;
+      case "notes_updated":
+        return "Updated notes";
+      case "published":
+        return "Published content";
+      case "revised":
+        return "Revised content";
+      default:
+        return log.action;
+    }
+  };
+
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
+    <div className="grid lg:grid-cols-2 gap-3 lg:gap-8 overflow-hidden">
       {/* Content Preview */}
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <Card>
-          <CardHeader>
+          <CardHeader className="p-4 lg:p-6">
             <CardTitle>Content Preview</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="prose prose-invert prose-sm max-w-none">
+          <CardContent className="overflow-hidden p-4 lg:p-6">
+            <div className="prose prose-invert prose-sm max-w-none break-words overflow-wrap-anywhere">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
           </CardContent>
@@ -138,11 +201,11 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
       </div>
 
       {/* Review Form */}
-      <div className="space-y-4">
+      <div className="space-y-4 min-w-0">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Review Status</CardTitle>
+          <CardHeader className="p-4 lg:p-6">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="break-words">Review Status</CardTitle>
               {loading ? (
                 <Badge variant="secondary">Loading...</Badge>
               ) : (
@@ -152,7 +215,7 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 lg:p-6">
             {/* Status Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
@@ -267,6 +330,42 @@ export default function ReviewClient({ slug, filePath, content, category }: Revi
             )}
           </CardContent>
         </Card>
+
+        {/* Audit Log Panel */}
+        {auditLogs.length > 0 && (
+          <Card>
+            <CardHeader className="p-4 lg:p-6">
+              <CardTitle>Audit Log</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 lg:p-6">
+              <div className="space-y-3">
+                {auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="border-l-2 border-primary/30 pl-4 py-2 text-sm"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-primary">
+                        {getActionDescription(log)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatRelativeTime(log.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>by {log.actor}</span>
+                    </div>
+                    {log.notes && (
+                      <div className="mt-2 text-xs bg-muted/30 rounded p-2">
+                        {log.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

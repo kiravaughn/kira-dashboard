@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-02-11
+
+### Added
+- Full CRUD interface for todos with create, edit, and delete modals
+- Drag-and-drop priority reordering using @dnd-kit library
+- Organized todo sections: Today's Habits, Scheduled, and Ongoing
+- Color-coded status badges and priority indicators
+- New shadcn/ui components: Dialog, AlertDialog, Input, Textarea, Label
+- API endpoint `/api/todos/reorder` for batch priority updates
+- Database schema: `priority` field on Todo model
+- Updated avatar image
+
+### Fixed
+- Recurring todo auto-reset now persists to database properly
+
 ## [1.2.0] - 2026-02-10
 
 ### Added
